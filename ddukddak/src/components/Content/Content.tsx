@@ -31,24 +31,22 @@ const Content = ({ code }: { code: string }) => {
     (
       objectName: string,
       methodName: string,
-      param: string,
+      param: string | number,
       opts?: { retries?: number; delayMs?: number; firstDelayMs?: number }
     ) => {
-      const retries = opts?.retries ?? 60; // 최대 60회 재시도(약 3초)
-      const delayMs = opts?.delayMs ?? 50; // 재시도 간격 50ms
-      const firstDelayMs = opts?.firstDelayMs ?? 150; // 첫 시도 전 150ms 대기
-
+      const retries = opts?.retries ?? 60;
+      const delayMs = opts?.delayMs ?? 50;
+      const firstDelayMs = opts?.firstDelayMs ?? 150;
       let left = retries;
+
       const attempt = () => {
         try {
-          sendMessage(objectName, methodName, param);
-          // 성공 시 타이머 정리
+          sendMessage(objectName, methodName, param.toString());
           if (retryTimerRef.current) {
             window.clearTimeout(retryTimerRef.current);
             retryTimerRef.current = null;
           }
         } catch (err) {
-          // “object not found”는 보통 씬 활성화 타이밍 문제 -> 재시도
           if (left > 0) {
             left -= 1;
             retryTimerRef.current = window.setTimeout(attempt, delayMs);
@@ -60,8 +58,6 @@ const Content = ({ code }: { code: string }) => {
           }
         }
       };
-
-      // 첫 시도도 약간 늦춰서 씬 활성 시간을 줌
       retryTimerRef.current = window.setTimeout(attempt, firstDelayMs);
     },
     [sendMessage]
@@ -76,7 +72,23 @@ const Content = ({ code }: { code: string }) => {
       delayMs: 50,
       retries: 80, // 최대 ~4초까지 기다려줌
     });
+
+    if (isMobileDevice()) {
+      safeSendMessage("FeedManager", "GetPlatform", 1, {
+        firstDelayMs: 500,
+        delayMs: 50,
+        retries: 60,
+      });
+    }
   }, [isLoaded, code, safeSendMessage]);
+
+  // 모바일 판별 함수
+  const isMobileDevice = () => {
+    if (typeof navigator === "undefined") return false;
+    return /Mobi|Android|iPhone|iPad|iPod|Samsung|Phone/i.test(
+      navigator.userAgent
+    );
+  };
 
   return (
     <div style={{ textAlign: "center", padding: "0px" }}>
