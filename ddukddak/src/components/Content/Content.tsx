@@ -66,12 +66,6 @@ const Content = ({ code }: { code: string }) => {
   // isLoaded 이후에만, 안전 전송으로 호출
   useEffect(() => {
     if (!isLoaded) return;
-    // FeedManager가 실제로 올라오기까지 아주 짧게 여유를 주고 재시작
-    safeSendMessage("FeedManager", "GetGallery", code, {
-      firstDelayMs: 200, // 초기 소폭 지연
-      delayMs: 50,
-      retries: 80, // 최대 ~4초까지 기다려줌
-    });
 
     if (isMobileDevice()) {
       safeSendMessage("FeedManager", "GetPlatform", 1, {
@@ -80,6 +74,13 @@ const Content = ({ code }: { code: string }) => {
         retries: 60,
       });
     }
+
+    // FeedManager가 실제로 올라오기까지 아주 짧게 여유를 주고 재시작
+    safeSendMessage("FeedManager", "GetGallery", code, {
+      firstDelayMs: 200, // 초기 소폭 지연
+      delayMs: 50,
+      retries: 80, // 최대 ~4초까지 기다려줌
+    });
   }, [isLoaded, code, safeSendMessage]);
 
   // 모바일 판별 함수
