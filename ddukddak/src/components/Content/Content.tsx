@@ -68,7 +68,7 @@ const Content = ({ code }: { code: string }) => {
     if (!isLoaded) return;
 
     if (isMobileDevice()) {
-      safeSendMessage("FeedManager", "GetPlatform", 1, {
+      safeSendMessage("FeedManager", "GetPlatform", "Mobile", {
         firstDelayMs: 500,
         delayMs: 50,
         retries: 60,
