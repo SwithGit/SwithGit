@@ -4,6 +4,7 @@ import { Unity, useUnityContext } from "react-unity-webgl";
 
 const Content = ({ code }: { code: string }) => {
   const [isUnityMounted, setIsUnityMounted] = useState(true);
+
   const { unityProvider, sendMessage, loadingProgression, isLoaded, unload } =
     useUnityContext({
       loaderUrl: "/PCUnityBuild/WebBuild.loader.js",
@@ -11,6 +12,22 @@ const Content = ({ code }: { code: string }) => {
       frameworkUrl: "/PCUnityBuild/WebBuild.framework.js",
       codeUrl: "/PCUnityBuild/WebBuild.wasm",
     });
+
+  // ================================
+  // 모바일 주소창 100vh 문제 해결
+  // ================================
+  useEffect(() => {
+    const updateVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+
+    updateVh();
+    window.addEventListener("resize", updateVh);
+
+    return () => window.removeEventListener("resize", updateVh);
+  }, []);
+  // ================================
 
   // 재시도 타이머 해제용
   const retryTimerRef = useRef<number | null>(null);
@@ -75,15 +92,14 @@ const Content = ({ code }: { code: string }) => {
       });
     }
 
-    // FeedManager가 실제로 올라오기까지 아주 짧게 여유를 주고 재시작
     safeSendMessage("FeedManager", "GetGallery", code, {
-      firstDelayMs: 200, // 초기 소폭 지연
+      firstDelayMs: 200,
       delayMs: 50,
-      retries: 80, // 최대 ~4초까지 기다려줌
+      retries: 80,
     });
   }, [isLoaded, code, safeSendMessage]);
 
-  // 모바일 판별 함수
+  // 모바일 판별
   const isMobileDevice = () => {
     if (typeof navigator === "undefined") return false;
     return /Mobi|Android|iPhone|iPad|iPod|Samsung|Phone/i.test(
@@ -98,10 +114,15 @@ const Content = ({ code }: { code: string }) => {
           {!isLoaded && (
             <div style={{ marginTop: "150px" }}>잠시만 기다려주세요!</div>
           )}
+
           <Unity
             unityProvider={unityProvider}
-            style={{ width: "100vw", height: "100vh" }}
+            style={{
+              width: "100vw",
+              height: "calc(var(--vh, 1vh) * 100)", // 모바일 문제 해결
+            }}
           />
+
           {loadingProgression < 1 && (
             <div style={{ marginTop: "10px" }}>
               로딩 중: {Math.round(loadingProgression * 100)}%
